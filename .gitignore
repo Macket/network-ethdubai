@@ -1,0 +1,14 @@
+/build
+*.pyc
+/node_modules
+/package.json
+/package-lock.json
+/cache
+*.lyx~
+/export
+\#*.lyx\#
+/.hypothesis
+.build
+venv
+/hardhat.config.js
+.idea
