@@ -1,5 +1,5 @@
 from brownie import accounts, network
-from brownie import UniswapV2Factory, UniswapV2Pair, UniswapV2Router02, ERC20Mock
+from brownie import UniswapV2Factory, UniswapV2Pair, UniswapV2Router02, ERC20Mock, ReferralContract
 
 SHORT_NAME = "crvUSD"
 FULL_NAME = "Curve.Fi USD Stablecoin"
@@ -25,16 +25,22 @@ def main():
 
     # --- ADD LIQUIDITY ---
 
-    macs._mint_for_testing(liquidity_provider, 10**4 * 10**18, txparams)
-    crvUSD._mint_for_testing(liquidity_provider, 10**4 * 10**18, txparams)
+    macs._mint_for_testing(liquidity_provider, 10**6 * 10**18, txparams)
+    crvUSD._mint_for_testing(liquidity_provider, 10**6 * 10**18, txparams)
     macs.approve(router, 2**256 - 1, {"from": liquidity_provider})
     crvUSD.approve(router, 2**256 - 1, {"from": liquidity_provider})
     router.addLiquidity(macs, crvUSD, 1000 * 10**18, 1000 * 10**18, 1000 * 10**18, 1000 * 10**18, liquidity_provider, 16788776556560, {"from": liquidity_provider})
     pool = UniswapV2Pair.at(factory.getPair(macs, crvUSD))
 
+    # --- PROVIDE INCENTIVES ---
+    referral_contract = ReferralContract.deploy(router, macs, crvUSD, 50, 50, txparams)
+    macs.approve(referral_contract, 10**4 * 10**18, {"from": liquidity_provider})
+    referral_contract.add_bonus(10**4 * 10**18, {"from": liquidity_provider})
+
     # --- BUY ---
     crvUSD._mint_for_testing(referee, 100 * 10**18, txparams)
-    crvUSD.approve(router, 2**256 - 1, {"from": referee})
+    crvUSD.approve(referral_contract, 2**256 - 1, {"from": referee})
+    referral_contract.ape(100 * 10**18, 0, 2**256 - 1, referral, {"from": referee})
 
     print('========================')
     print('Factory:     ', factory.address)
